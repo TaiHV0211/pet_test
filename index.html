@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Files and Download ZIP</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Overlay for loading */
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        /* Centering the loader */
+        .loader {
+            width: 120px;
+            height: 20px;
+            border-radius: 20px;
+            background:
+                linear-gradient(orange 0 0) 0/0% no-repeat
+                lightblue;
+            animation: l2 2s infinite steps(10);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        @keyframes l2 {
+            100% { background-size: 110%; }
+        }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center vh-100">
+
+    <div class="container text-center">
+        <h1 class="mb-4">Upload Files and Download ZIP</h1>
+        <form id="uploadForm" class="form-group">
+            <div class="mb-3">
+                <input type="file" id="filesInput" name="files" class="form-control" multiple required>
+            </div>
+            <button type="submit" class="btn btn-primary">Upload and Process</button>
+        </form>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Bootstrap JS (Optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'block'; // Show the loading overlay
+
+            const filesInput = document.getElementById('filesInput');
+            const files = filesInput.files;
+            const formData = new FormData();
+
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            try {
+                const response = await fetch('https://api-pep.greenspeed.vn:59408/detect-files', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const disposition = response.headers.get('Content-Disposition');
+                    let filename = 'processed_files.zip';
+                    if (disposition && disposition.includes('filename=')) {
+                        filename = disposition.split('filename=')[1].replace(/['"]/g, '');
+                    }
+
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    alert('Failed to process files.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing files.');
+            } finally {
+                loadingOverlay.style.display = 'none'; // Hide the loading overlay after processing
+            }
+        });
+    </script>
+</body>
+</html>
