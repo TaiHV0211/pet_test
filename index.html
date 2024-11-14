@@ -69,11 +69,11 @@
             const formData = new FormData();
 
             for (let i = 0; i < files.length; i++) {
-                formData.append('files', files[i]);
+                formData.append('images', files[i]);
             }
 
             try {
-                const response = await fetch('https://api-pep.greenspeed.vn:59408/detect-files', {
+                const response = await fetch('https://api-pep.greenspeed.vn:59408/api/process-images', {
                     method: 'POST',
                     body: formData
                 });
